@@ -112,7 +112,9 @@ jobs:
           set -e
           if [ "$TEST_EXIT" -ne 0 ]; then
             FAILED_SIGS=$(grep -E '^test .* \.\.\. FAILED' /tmp/test.log | awk '{print $2}' | tr '\n' ',' | cut -c1-100 || true)
-            [ -n "$FAILED_SIGS" ] || FAILED_SIGS=$(grep -m1 -E 'error\[E[0-9]+\]' /tmp/test.log | cut -c1-100 || true)
+            if [ -z "$FAILED_SIGS" ]; then
+              FAILED_SIGS=$(grep -m1 -E 'error\[E[0-9]+\]' /tmp/test.log | cut -c1-100 || true)
+            fi
             printf '%s\n' "${FAILED_SIGS:-Test run failed with code $TEST_EXIT}" > "$RUNNER_TEMP/ci-failure-description" || true
             echo "Tauri Rust tests failed; private output suppressed."
             exit 1
@@ -138,7 +140,9 @@ jobs:
           set -e
           if [ "$FMT_EXIT" -ne 0 ]; then
             FMT_FILES=$(grep '^Diff in ' /tmp/fmt.log | sed -E 's/^Diff in ([^:]+):.*/\1/' | xargs -r -n1 basename | sort -u | paste -sd ',' - | cut -c1-85 || true)
-            [ -n "$FMT_FILES" ] || FMT_FILES=$(grep -m1 -E 'error:|Error:' /tmp/fmt.log | cut -c1-85 || true)
+            if [ -z "$FMT_FILES" ]; then
+              FMT_FILES=$(grep -m1 -E 'error:|Error:' /tmp/fmt.log | cut -c1-85 || true)
+            fi
             printf '%s\n' "${FMT_FILES:-cargo fmt failed with code $FMT_EXIT}" > "$RUNNER_TEMP/ci-failure-description" || true
             echo "Rust formatting check failed; private output suppressed."
             exit 1
